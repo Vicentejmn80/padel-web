@@ -1,0 +1,118 @@
+/* ===== IMPORTS — must come first ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+/* ===== Tema personalizado ===== */
+@theme {
+  /* Colores de marca */
+  --color-brand-primary: #8DE02C;
+  --color-brand-secondary: #4C9AFF;
+  --color-brand-deep: #001233;
+  --color-brand-darker: #000814;
+  
+  /* Fuentes — font-serif usa Playfair Display para headings premium */
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  /* Animaciones */
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===== Base ===== */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-brand-darker);
+    color: white;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ===== Componentes ===== */
+@layer components {
+  /* Glassmorphism */
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    background-color: color-mix(in srgb, #001F5B 30%, transparent);
+    border: 1px solid color-mix(in srgb, white 10%, transparent);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Gradiente de fondo principal */
+  .deep-blue-bg {
+    background: radial-gradient(circle at 10% 20%, #001233 0%, #000814 100%);
+  }
+
+  /* Rejilla técnica */
+  .technical-grid-bg {
+    background-image: 
+      linear-gradient(rgba(76, 154, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(76, 154, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Línea de acento Neón — reutilizable */
+  .neon-rule {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background-color: #39FF14;
+    border-radius: 2px;
+    margin-top: 1.25rem;
+  }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--color-brand-darker); }
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-brand-primary) 50%, transparent);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--color-brand-primary); }
+
+/* ===================================================
+   AJUSTES DE LOCALIZACIÓN — Spanish Visual Parity
+   ===================================================
+   REGLA: Los h2/h3 en español NO se reducen.
+   Solo se aprieta el tracking en textos muy largos
+   para mantener el mismo impacto visual.
+   =================================================== */
+
+/* Hero: el título principal se mantiene en el mismo clamp
+   que la versión EN pero con tracking más tight  */
+.lang-es .hero-title {
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+/* Sección h2/h3: solo ajuste de tracking, SIN reducir font-size */
+.lang-es h2,
+.lang-es h3 {
+  letter-spacing: -0.02em;
+}
+
+/* Botones CTA: comprimido sutil para textos largos en ES */
+.lang-es button,
+.lang-es a.font-bold {
+  font-size: 0.93em;
+  letter-spacing: -0.01em;
+}
+
+/* Párrafos / cuerpo */
+.lang-es p,
+.lang-es li {
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+}
+
+/* CTA de contacto — texto más largo en ES */
+.lang-es #contacto button[type="submit"] {
+  font-size: 0.88em;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
