@@ -18,7 +18,10 @@ import {
   DollarSign,
   Layers,
   Ruler,
-  Sparkles
+  Sparkles,
+  Target,
+  ArrowUpRight,
+  Users
 } from 'lucide-react';
 import { content } from './locales';
 
@@ -27,6 +30,7 @@ function Reveal({ children, delay = 0, className = "" }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
+      transitionEnd={{ opacity: 1 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, delay: delay, ease: "easeOut" }}
       className={className}
@@ -40,9 +44,11 @@ function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hours, setHours] = useState(4.5);
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(() => localStorage.getItem('padel_lang') || 'en');
 
   const t = content[lang];
+  const toggleLanguage = () => setLang((prev) => (prev === 'en' ? 'es' : 'en'));
+  const languageButtonAria = lang === 'en' ? t.nav.langSwitchToSpanish : t.nav.langSwitchToEnglish;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -50,9 +56,21 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('padel_lang', lang);
+  }, [lang]);
+
   // Calculator Logic
   const rawRevenue = 5 * hours * 40 * 360;
   const ebitda = rawRevenue * 0.60;
+
+  // IRR interpolation: 3h → ~12%, 4.5h → 18.5%, 6h → 24.8%, capped at extremes
+  const calcIRR = (() => {
+    if (hours <= 3) return 12.0;
+    if (hours <= 4.5) return 12.0 + ((hours - 3) / 1.5) * (18.5 - 12.0);
+    if (hours <= 6) return 18.5 + ((hours - 4.5) / 1.5) * (24.8 - 18.5);
+    return 24.8 + ((hours - 6) / 2) * (30 - 24.8);
+  })();
 
   const formatter = new Intl.NumberFormat(lang === 'es' ? 'es-US' : 'en-US', {
     style: 'currency',
@@ -84,27 +102,27 @@ function App() {
             <a href="#galeria" className="text-sm font-semibold transition-all hover:text-brand-primary text-zinc-300 hover:scale-105">{t.nav.project}</a>
             <a href="#roi" className="text-sm font-semibold transition-all hover:text-brand-primary text-zinc-300 hover:scale-105">{t.nav.profitability}</a>
             
-            <button 
-              onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-              className="flex items-center gap-2 text-sm font-semibold transition-all hover:text-brand-primary text-zinc-300 border border-white/10 px-3 py-1.5 rounded-full hover:border-brand-primary"
-            >
-              <Globe size={16} />
-              {lang === 'es' ? 'EN' : 'ES'}
-            </button>
+            <div className="flex items-center gap-4 border-l border-white/10 pl-8 ml-2">
+              <button 
+                onClick={toggleLanguage}
+                aria-label={languageButtonAria}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-[11px] font-black uppercase tracking-[0.35em] text-[#39FF14]"
+              >
+                <Globe size={14} className="text-[#39FF14]" />
+                <span className="flex items-center gap-1">
+                  <span className={lang === 'en' ? 'text-white' : 'text-white/50'}>EN</span>
+                  <span className="text-white/40">/</span>
+                  <span className={lang === 'es' ? 'text-white' : 'text-white/50'}>ES</span>
+                </span>
+              </button>
 
-            <a href="#contacto" className="bg-brand-primary text-brand-darker px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-transform shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50">
-              {t.nav.cta}
-            </a>
+              <a href="#contacto" className="bg-brand-primary text-brand-darker px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-transform shadow-lg shadow-brand-primary/30 hover:shadow-brand-primary/50">
+                {t.nav.cta}
+              </a>
+            </div>
           </div>
 
           <div className="md:hidden flex items-center gap-4">
-            <button 
-              onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-              className="flex items-center gap-1 text-sm font-bold text-white bg-white/10 px-3 py-1.5 rounded-full"
-            >
-              <Globe size={16} />
-              {lang === 'es' ? 'EN' : 'ES'}
-            </button>
             <button 
               className="text-white bg-white/10 p-2 rounded-xl backdrop-blur"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -116,6 +134,26 @@ function App() {
 
         {isMobileMenuOpen && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="md:hidden absolute top-full left-0 w-full glass-panel py-6 px-6 flex flex-col gap-5 border-t border-white/10 rounded-b-3xl">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-black uppercase tracking-widest text-white/40">{t.nav.languageLabel}</span>
+              <button 
+                onClick={toggleLanguage}
+                aria-label={languageButtonAria}
+                className="flex flex-col items-end gap-1 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-[#39FF14]"
+              >
+                <div className="flex items-center gap-2 text-[11px]">
+                  <Globe size={14} />
+                  <span className="flex items-center gap-1">
+                    <span className={lang === 'en' ? 'text-white' : 'text-white/50'}>EN</span>
+                    <span className="text-white/40">/</span>
+                    <span className={lang === 'es' ? 'text-white' : 'text-white/50'}>ES</span>
+                  </span>
+                </div>
+                <span className="text-[9px] text-white/60 tracking-[0.5em]">
+                  {lang === 'en' ? t.nav.langSwitchToSpanish : t.nav.langSwitchToEnglish}
+                </span>
+              </button>
+            </div>
             <a href="#why-now" onClick={() => setIsMobileMenuOpen(false)} className="text-white font-bold block py-2">{t.nav.market}</a>
             <a href="#galeria" onClick={() => setIsMobileMenuOpen(false)} className="text-white font-bold block py-2">{t.nav.project}</a>
             <a href="#roi" onClick={() => setIsMobileMenuOpen(false)} className="text-white font-bold block py-2">{t.nav.profitability}</a>
@@ -134,7 +172,7 @@ function App() {
             alt="Padel Court Background" 
             className="w-full h-full object-cover object-bottom opacity-20 mix-blend-overlay"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-darker via-transparent to-brand-darker"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
         </div>
 
         <div className="max-w-7xl relative z-10 px-6 mx-auto w-full">
@@ -173,34 +211,88 @@ function App() {
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.irrLabel}</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl md:text-4xl font-heading font-black text-white">$600K</p>
-                <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.priceLabel}</p>
+                <p className="text-3xl md:text-4xl font-heading font-black text-white">$200K</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.assetLabel}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl md:text-4xl font-heading font-black text-brand-primary">$600K</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.capexLabel}</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl md:text-4xl font-heading font-black text-white">{t.hero.statusLabel}</p>
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.statusSub}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl md:text-4xl font-heading font-black text-white">Cape Coral</p>
-                <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.location}</p>
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
+      {/* ---------------- INVESTMENT THESIS (3-col) ---------------- */}
+      <section className="py-20 relative overflow-hidden">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_10.png" alt="" className="w-full h-full object-cover opacity-8 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
+        <div className="max-w-7xl px-6 mx-auto relative z-10">
+          <Reveal>
+            <div className="text-center mb-14 flex flex-col items-center">
+              <span className="inline-flex items-center gap-2 text-brand-primary text-xs font-black tracking-[0.25em] uppercase mb-5">
+                <Target size={14} />{t.thesis.badge}
+              </span>
+              <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight max-w-3xl leading-[1.1]">
+                {t.thesis.title}
+              </h2>
+              <div className="w-10 h-1 bg-brand-primary mt-6" />
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { num: "01", title: t.thesis.col1Title, text: t.thesis.col1Text, tag: t.thesis.col1Tag, accent: "brand-primary" },
+              { num: "02", title: t.thesis.col2Title, text: t.thesis.col2Text, tag: t.thesis.col2Tag, accent: "brand-secondary" },
+              { num: "03", title: t.thesis.col3Title, text: t.thesis.col3Text, tag: t.thesis.col3Tag, accent: "brand-primary" },
+            ].map((col, idx) => (
+              <Reveal key={idx} delay={idx * 0.12}>
+                <div className="glass-panel rounded-[2rem] p-8 md:p-10 h-full flex flex-col hover:border-brand-primary/50 transition-all hover:scale-[1.02] group">
+                  <span className="font-heading font-black text-5xl text-white/10 mb-4 group-hover:text-white/15 transition-colors">{col.num}</span>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-brand-primary/15 text-brand-primary border border-brand-primary/30">{col.tag}</span>
+                  </div>
+                  <h3 className="font-heading text-xl font-bold text-white mb-3">{col.title}</h3>
+                  <p className="text-blue-100/70 text-sm leading-relaxed flex-1">{col.text}</p>
+                  <div className="mt-6 flex items-center gap-1 text-brand-primary text-xs font-bold">
+                    <ArrowUpRight size={14} />
+                    <span>{t.thesis.valueDriver}</span>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ---------------- HIGHLIGHTS & RESEARCH (Unified) ---------------- */}
-      <section id="why-now" className="py-24 relative">
+      <section id="why-now" className="py-24 relative overflow-hidden">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_1.jpg" alt="" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
         <div className="max-w-7xl px-6 mx-auto">
           <Reveal>
-            <div className="mb-20 text-center flex flex-col items-center">
-              <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
-                {t.highlights.title}
-              </h2>
-              <div className="w-10 h-1 bg-[#39FF14] mb-8"></div>
-              <p className="text-xl font-sans font-light text-white/80 max-w-3xl mx-auto leading-relaxed">
-                {t.highlights.subtitle}
-              </p>
+            <div className="mb-20 flex flex-col items-center">
+              <div
+                className="w-full max-w-4xl backdrop-blur-xl rounded-lg p-6"
+                style={{ background: 'rgba(10, 25, 47, 0.75)', borderLeft: '4px solid #39FF14' }}
+              >
+                <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
+                  {t.highlights.title}
+                </h2>
+                <div className="w-10 h-1 bg-[#39FF14] mb-6"></div>
+                <p className="text-lg md:text-xl font-sans font-medium text-[#E2E8F0] leading-relaxed">
+                  {t.highlights.subtitle}
+                </p>
+              </div>
             </div>
           </Reveal>
 
@@ -244,26 +336,36 @@ function App() {
 
       {/* ---------------- INTERACTIVE GALLERY (Enhanced) ---------------- */}
       <section id="galeria" className="py-24 relative overflow-hidden">
+        {/* premium dossier overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_01.jpg" alt="" className="w-full h-full object-cover opacity-15 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-darker/85 via-brand-darker/60 to-brand-darker/85" />
+        </div>
         <div className="max-w-7xl px-6 mx-auto">
           <Reveal>
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
-              <div className="max-w-2xl">
-                <h2 className="text-[#39FF14] font-sans font-bold tracking-[0.2em] uppercase mb-4 text-xs opacity-80">{t.gallery.badge}</h2>
+              <div
+                className="max-w-2xl backdrop-blur-xl rounded-lg p-6"
+                style={{ background: 'rgba(10, 25, 47, 0.75)', borderLeft: '4px solid #39FF14' }}
+              >
+                <h2 className="text-[#39FF14] font-sans font-bold tracking-[0.2em] uppercase mb-4 text-xs">
+                  {t.gallery.badge}
+                </h2>
                 <h3 className="font-serif text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] text-white">
                   {t.gallery.title}
                 </h3>
-                <div className="w-10 h-1 bg-[#39FF14] mt-8"></div>
+                <div className="w-10 h-1 bg-[#39FF14] mt-6"></div>
               </div>
             </div>
           </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { img: "/images/render_01.jpg", badge: t.gallery.card1Badge, title: t.gallery.card1Title, span: "md:col-span-2" },
-              { img: "/images/render_1.jpg", badge: t.gallery.card2Badge, title: t.gallery.card2Title, span: "" },
-              { img: "/images/render_2.jpg", badge: t.gallery.card3Badge, title: t.gallery.card3Title, span: "" },
-              { img: "/images/render_3.jpg", badge: t.gallery.card4Badge, title: t.gallery.card4Title, span: "" },
-              { img: "/images/render_4.jpg", badge: null, title: t.gallery.card5Title, span: "" },
+              { img: "/images/master_plan_general.png", badge: t.gallery.card1Badge, title: t.gallery.card1Title, span: "md:col-span-2" },
+              { img: "/images/professional_outdoor.png", badge: t.gallery.card2Badge, title: t.gallery.card2Title, span: "" },
+              { img: "/images/canchas_de_autor.png", badge: t.gallery.card3Badge, title: t.gallery.card3Title, span: "" },
+              { img: "/images/acabados_alta_gama.png", badge: t.gallery.card4Badge, title: t.gallery.card4Title, span: "" },
+              { img: "/images/casa_club_parking.png", badge: null, title: t.gallery.card5Title, span: "" },
             ].map((item, idx) => (
               <motion.div key={idx} whileHover={{ scale: 1.02 }} className={`relative rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl ${item.span}`}>
                 <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 hover:scale-110" />
@@ -283,17 +385,27 @@ function App() {
       </section>
 
       {/* ---------------- ROI DASHBOARD & CALCULATOR (Glassmorphism) ---------------- */}
-      <section id="roi" className="py-24 relative">
+      <section id="roi" className="py-24 relative overflow-hidden">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_2.jpg" alt="" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
         <div className="max-w-7xl px-6 mx-auto">
           <Reveal>
-            <div className="text-center max-w-3xl mx-auto mb-20 flex flex-col items-center">
-              <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
-                {t.roi.title}
-              </h2>
-              <div className="w-10 h-1 bg-[#39FF14] mb-8"></div>
-              <p className="text-xl font-sans font-light text-white/80 leading-relaxed">
-                {t.roi.subtitle}
-              </p>
+            <div className="max-w-3xl mx-auto mb-20 flex flex-col items-center">
+              <div
+                className="w-full backdrop-blur-xl rounded-lg p-6"
+                style={{ background: 'rgba(10, 25, 47, 0.75)', borderLeft: '4px solid #39FF14' }}
+              >
+                <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
+                  {t.roi.title}
+                </h2>
+                <div className="w-10 h-1 bg-[#39FF14] mb-6"></div>
+                <p className="text-lg md:text-xl font-sans font-medium text-[#E2E8F0] leading-relaxed">
+                  {t.roi.subtitle}
+                </p>
+              </div>
             </div>
           </Reveal>
 
@@ -302,14 +414,18 @@ function App() {
             {/* Table Comparison */}
             <Reveal delay={0.1}>
               <div className="glass-panel rounded-[2rem] p-8 h-full flex flex-col justify-center">
-                <h3 className="font-heading text-2xl font-bold text-white mb-6">{t.roi.tableTitle}</h3>
+                <h3 className="font-heading text-2xl font-bold text-white mb-4">{t.roi.tableTitle}</h3>
+                {/* Methodology note */}
+                <p className="text-[11px] text-zinc-500 italic border-l-2 border-brand-primary/40 pl-3 mb-6 leading-relaxed">
+                  {t.roi.methodology}
+                </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-white/10">
                         <th className="py-4 text-blue-100/70 font-semibold text-sm uppercase">{t.roi.col1}</th>
-                        <th className="py-4 text-white font-bold">{t.roi.col2}</th>
-                        <th className="py-4 text-brand-primary font-bold">{t.roi.col3}</th>
+                        <th className="py-4 text-white font-bold text-sm">{t.roi.col2}</th>
+                        <th className="py-4 text-brand-primary font-bold text-sm">{t.roi.col3}</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -324,9 +440,28 @@ function App() {
                         <td className="py-4 font-bold text-brand-secondary">{t.roi.row2Col3}</td>
                       </tr>
                       <tr className="bg-brand-primary/5">
-                        <td className="py-4 text-blue-100 font-bold">{t.roi.row3Col1}</td>
+                        <td className="py-4 text-blue-100 font-bold">
+                          <span className="relative group cursor-help">
+                            {t.roi.row3Col1}
+                            <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+                              {t.roi.tooltipIRR}
+                            </span>
+                          </span>
+                        </td>
                         <td className="py-4 font-black text-white">{t.roi.row3Col2}</td>
                         <td className="py-4 font-black text-brand-primary text-2xl">{t.roi.row3Col3}</td>
+                      </tr>
+                      <tr className="bg-brand-secondary/5">
+                        <td className="py-4 text-blue-100 font-bold">
+                          <span className="relative group cursor-help">
+                            {t.roi.row4Col1}
+                            <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+                              {t.roi.tooltipROI}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="py-4 font-black text-white">{t.roi.row4Col2}</td>
+                        <td className="py-4 font-black text-brand-primary text-2xl">{t.roi.row4Col3}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -365,25 +500,76 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="grid grid-cols-2 gap-4 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <div>
                       <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.gross}</h4>
                       <p className="font-heading text-2xl font-black text-white">{formatter.format(rawRevenue)}</p>
                     </div>
                     <div>
-                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.ebitda}</h4>
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">
+                        <span className="relative group cursor-help">
+                          {t.roi.ebitda}
+                          <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+                            {t.roi.tooltipEBITDA}
+                          </span>
+                        </span>
+                      </h4>
                       <p className="font-heading text-2xl font-black text-brand-primary">{formatter.format(ebitda)}</p>
+                    </div>
+                    <div className="col-span-2 pt-3 border-t border-white/10">
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">
+                        <span className="relative group cursor-help">
+                          {t.roi.calcIRRLabel}
+                          <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
+                            {t.roi.tooltipIRR}
+                          </span>
+                        </span>
+                      </h4>
+                      <p className="font-heading text-3xl font-black text-brand-primary">{calcIRR.toFixed(1)}%</p>
                     </div>
                   </div>
                 </div>
               </div>
             </Reveal>
           </div>
+
+          {/* Financial Glossary */}
+          <Reveal delay={0.3}>
+            <div className="mt-10 max-w-3xl mx-auto relative z-10">
+              <div
+                className="bg-[rgba(10,25,47,0.7)] backdrop-blur-xl border border-[#39FF14]/30 rounded-xl p-5 text-white opacity-100"
+                style={{ zIndex: 10, opacity: 1 }}
+              >
+                <p className="text-xs font-bold text-white uppercase tracking-widest mb-4" style={{ opacity: 1 }}>
+                  {t.roi.glossaryTitle}
+                </p>
+                <div className="space-y-3 text-sm text-white" style={{ opacity: 1 }}>
+                  <p>
+                    <span className="text-[#39FF14] font-bold">{t.roi.glossaryIRRLabel}</span>{' '}
+                    <span className="text-white font-medium">{t.roi.glossaryIRRText}</span>
+                  </p>
+                  <p>
+                    <span className="text-[#39FF14] font-bold">{t.roi.glossaryROILabel}</span>{' '}
+                    <span className="text-white font-medium">{t.roi.glossaryROIText}</span>
+                  </p>
+                  <p>
+                    <span className="text-[#39FF14] font-bold">{t.roi.glossaryEBITDALabel}</span>{' '}
+                    <span className="text-white font-medium">{t.roi.glossaryEBITDAText}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* ---------------- DATA & PLANS (Technical Grid) ---------------- */}
-      <section id="planos" className="py-24 relative technical-grid-bg border-t border-white/10">
+      <section id="planos" className="py-24 relative overflow-hidden border-t border-white/10">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_4.jpg" alt="" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
         <div className="max-w-7xl relative z-10 px-6 mx-auto">
           <Reveal>
             <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-12">
@@ -419,6 +605,26 @@ function App() {
             ))}
           </div>
 
+          {/* Demand Drivers */}
+          <Reveal delay={0.15}>
+            <div className="glass-panel rounded-[2rem] p-8 mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center">
+                  <Users size={16} className="text-brand-primary" />
+                </div>
+                <h4 className="font-heading font-bold text-white text-lg">{t.data.demandDriversTitle}</h4>
+              </div>
+              <ul className="space-y-3">
+                {[t.data.demandDriver1, t.data.demandDriver2, t.data.demandDriver3, t.data.demandDriver4].map((d, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-blue-100/80">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 shrink-0" />
+                    {d}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+
           <Reveal delay={0.2}>
             <div className="mb-12">
                <h3 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">{t.data.plansTitle}</h3>
@@ -453,8 +659,82 @@ function App() {
         </div> 
       </section>
 
+      {/* ---------------- STRATEGIC PATHWAYS (Exit Section) ---------------- */}
+      <section className="py-24 relative overflow-hidden">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_3.jpg" alt="" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
+        <div className="max-w-7xl px-6 mx-auto relative z-10">
+          <Reveal>
+            <div className="text-center mb-16 flex flex-col items-center">
+              <span className="inline-flex items-center gap-2 text-brand-primary text-xs font-black tracking-[0.25em] uppercase mb-5">
+                <Target size={14} />{t.pathways.badge}
+              </span>
+              <h2 className="font-serif text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
+                {t.pathways.title}
+              </h2>
+              <div className="w-10 h-1 bg-brand-primary mt-2 mb-6" />
+              <p className="text-xl text-white/60 font-light max-w-xl">{t.pathways.subtitle}</p>
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Pathway 1 */}
+            <Reveal delay={0.1}>
+              <div className="relative glass-panel rounded-[2rem] p-12 overflow-hidden group border border-[#39FF14]/30 hover:border-brand-primary/50 hover:scale-[1.01] transition-all h-full">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-brand-primary/10 rounded-full blur-3xl" />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="font-heading font-black text-6xl text-white/8">{t.pathways.path1Num}</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full bg-brand-primary/20 text-brand-primary border border-brand-primary/40">{t.pathways.path1Tag}</span>
+                  </div>
+                  <h3 className="font-heading text-3xl font-black text-white mb-4">{t.pathways.path1Title}</h3>
+                  <p className="text-slate-100/90 leading-relaxed mb-8 flex-1 min-h-[140px]">{t.pathways.path1Text}</p>
+                  <ul className="space-y-3 mt-auto">
+                    {[t.pathways.path1Bullet1, t.pathways.path1Bullet2, t.pathways.path1Bullet3].map((b, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm text-white/80 font-medium">
+                        <CheckCircle2 size={16} className="text-brand-primary shrink-0" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+            {/* Pathway 2 */}
+            <Reveal delay={0.2}>
+              <div className="relative glass-panel rounded-[2rem] p-12 overflow-hidden group border border-[#39FF14]/30 hover:border-brand-secondary/50 hover:scale-[1.01] transition-all h-full">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-brand-secondary/10 rounded-full blur-3xl" />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="font-heading font-black text-6xl text-white/8">{t.pathways.path2Num}</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1.5 rounded-full bg-brand-secondary/20 text-brand-secondary border border-brand-secondary/40">{t.pathways.path2Tag}</span>
+                  </div>
+                  <h3 className="font-heading text-3xl font-black text-white mb-4">{t.pathways.path2Title}</h3>
+                  <p className="text-slate-100/90 leading-relaxed mb-8 flex-1 min-h-[140px]">{t.pathways.path2Text}</p>
+                  <ul className="space-y-3 mt-auto">
+                    {[t.pathways.path2Bullet1, t.pathways.path2Bullet2, t.pathways.path2Bullet3].map((b, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm text-white/80 font-medium">
+                        <CheckCircle2 size={16} className="text-brand-secondary shrink-0" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* ---------------- CTA CONTACT (Final Push) ---------------- */}
-      <section id="contacto" className="py-24 relative">
+      <section id="contacto" className="py-24 relative overflow-hidden">
+        {/* investment deck bg overlay */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/images/render_01.jpg" alt="" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/85 to-[#0a192f]/95" style={{ background: 'linear-gradient(to bottom, rgba(10, 25, 47, 0.85), rgba(10, 25, 47, 0.95))' }} />
+        </div>
         <div className="max-w-5xl px-6 mx-auto">
           <Reveal>
             <div className="glass-panel rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden">
