@@ -20,7 +20,6 @@ import {
   Ruler,
   Sparkles,
   Target,
-  ArrowUpRight,
   Users
 } from 'lucide-react';
 import { content } from './locales';
@@ -43,8 +42,9 @@ function Reveal({ children, delay = 0, className = "" }) {
 function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hours, setHours] = useState(4.5);
   const [lang, setLang] = useState(() => localStorage.getItem('padel_lang') || 'en');
+  const baseInvestment = 700000;
+  const [investment, setInvestment] = useState(baseInvestment);
 
   const t = content[lang];
   const toggleLanguage = () => setLang((prev) => (prev === 'en' ? 'es' : 'en'));
@@ -60,23 +60,32 @@ function App() {
     localStorage.setItem('padel_lang', lang);
   }, [lang]);
 
-  // Calculator Logic
-  const rawRevenue = 5 * hours * 40 * 360;
-  const ebitda = rawRevenue * 0.60;
-
-  // IRR interpolation: 3h → ~12%, 4.5h → 18.5%, 6h → 24.8%, capped at extremes
-  const calcIRR = (() => {
-    if (hours <= 3) return 12.0;
-    if (hours <= 4.5) return 12.0 + ((hours - 3) / 1.5) * (18.5 - 12.0);
-    if (hours <= 6) return 18.5 + ((hours - 4.5) / 1.5) * (24.8 - 18.5);
-    return 24.8 + ((hours - 6) / 2) * (30 - 24.8);
-  })();
+  // Revenue & EBITDA assumptions (fixed for financial update)
+  const padelRevenue = 3 * 40 * 5 * 360;
+  const pickleballRevenue = 2 * 20 * 5 * 360;
+  const retailRevenue = 15000;
+  const opex = 112000;
+  const totalRevenue = padelRevenue + pickleballRevenue + retailRevenue;
+  const ebitda = totalRevenue - opex;
+  const baseEbitda = 191000;
+  const ebitdaMargin = 0.27;
+  const grossRevenueBase = baseEbitda / ebitdaMargin;
+  const ebitdaDynamic = grossRevenueBase * ebitdaMargin * (investment / baseInvestment);
+  const roiAnnual = (ebitdaDynamic / investment) * 100;
+  const paybackYears = investment / ebitdaDynamic;
 
   const formatter = new Intl.NumberFormat(lang === 'es' ? 'es-US' : 'en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0
   });
+
+  const handleInvestmentChange = (value) => {
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return;
+    const clampedValue = Math.min(1000000, Math.max(500000, numericValue));
+    setInvestment(clampedValue);
+  };
 
   return (
     <div className={`min-h-screen text-white selection:bg-brand-primary selection:text-brand-darker ${lang === 'es' ? 'lang-es' : ''}`}>
@@ -207,7 +216,7 @@ function App() {
             {/* Key Metrics Highlight */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-white/10">
               <div className="text-center">
-                <p className="text-3xl md:text-4xl font-heading font-black text-brand-primary">24.8%</p>
+                <p className="text-3xl md:text-4xl font-heading font-black text-brand-primary">27.3%</p>
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.irrLabel}</p>
               </div>
               <div className="text-center">
@@ -215,7 +224,7 @@ function App() {
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.assetLabel}</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl md:text-4xl font-heading font-black text-brand-primary">$600K</p>
+                <p className="text-3xl md:text-4xl font-heading font-black text-brand-primary">$700K</p>
                 <p className="text-xs text-zinc-400 uppercase tracking-wider mt-1">{t.hero.capexLabel}</p>
               </div>
               <div className="text-center">
@@ -260,10 +269,6 @@ function App() {
                   </div>
                   <h3 className="font-heading text-xl font-bold text-white mb-3">{col.title}</h3>
                   <p className="text-blue-100/70 text-sm leading-relaxed flex-1">{col.text}</p>
-                  <div className="mt-6 flex items-center gap-1 text-brand-primary text-xs font-bold">
-                    <ArrowUpRight size={14} />
-                    <span>{t.thesis.valueDriver}</span>
-                  </div>
                 </div>
               </Reveal>
             ))}
@@ -429,40 +434,15 @@ function App() {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      <tr>
-                        <td className="py-4 text-blue-100 font-medium">{t.roi.row1Col1}</td>
-                        <td className="py-4 font-bold text-white">{t.roi.row1Col2}</td>
-                        <td className="py-4 font-bold text-white">{t.roi.row1Col3}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-4 text-blue-100 font-medium">{t.roi.row2Col1}</td>
-                        <td className="py-4 font-bold text-white">{t.roi.row2Col2}</td>
-                        <td className="py-4 font-bold text-brand-secondary">{t.roi.row2Col3}</td>
-                      </tr>
-                      <tr className="bg-brand-primary/5">
-                        <td className="py-4 text-blue-100 font-bold">
-                          <span className="relative group cursor-help">
-                            {t.roi.row3Col1}
-                            <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
-                              {t.roi.tooltipIRR}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="py-4 font-black text-white">{t.roi.row3Col2}</td>
-                        <td className="py-4 font-black text-brand-primary text-2xl">{t.roi.row3Col3}</td>
-                      </tr>
-                      <tr className="bg-brand-secondary/5">
-                        <td className="py-4 text-blue-100 font-bold">
-                          <span className="relative group cursor-help">
-                            {t.roi.row4Col1}
-                            <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
-                              {t.roi.tooltipROI}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="py-4 font-black text-white">{t.roi.row4Col2}</td>
-                        <td className="py-4 font-black text-brand-primary text-2xl">{t.roi.row4Col3}</td>
-                      </tr>
+                      {t.roi.rows.map((row, idx) => (
+                        <tr key={row.label} className={row.emphasis ? 'bg-brand-primary/5' : ''}>
+                          <td className="py-4 text-blue-100 font-medium">{row.label}</td>
+                          <td className="py-4 font-bold text-white">{row.value}</td>
+                          <td className={`py-4 font-semibold ${row.emphasis ? 'text-brand-primary' : 'text-white/80'}`}>
+                            {row.note}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -476,62 +456,94 @@ function App() {
                 <Sparkles className="absolute top-6 right-6 text-brand-primary/30" size={32} />
                 
                 <h3 className="font-heading text-2xl font-bold text-white mb-2 relative z-10">{t.roi.calcTitle}</h3>
-                <p className="text-zinc-400 mb-8 relative z-10 text-sm">{t.roi.calcSubtitle}</p>
+                <p className="text-zinc-400 mb-6 relative z-10 text-sm">{t.roi.calcSubtitle}</p>
+                <p className="text-xs text-white/70 mb-8 relative z-10">{t.roi.calcAssumptions}</p>
                 
                 <div className="relative z-10 space-y-8">
-                  <div>
-                    <div className="flex justify-between items-end mb-4">
-                      <label className="text-sm font-bold text-zinc-300">{t.roi.calcLabel}</label>
-                      <span className="font-heading font-black text-4xl text-brand-primary">{hours}<span className="text-lg">h</span></span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="2" 
-                      max="8" 
-                      step="0.5"
-                      value={hours} 
-                      onChange={(e) => setHours(Number(e.target.value))}
-                      className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-primary"
-                    />
-                    <div className="flex justify-between text-xs text-zinc-500 font-bold mt-2">
-                      <span>{t.roi.pesimistic}</span>
-                      <span>{t.roi.realistic}</span>
-                      <span>{t.roi.soldout}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
                     <div>
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.padelLabel}</h4>
+                      <p className="font-heading text-2xl font-black text-white">{formatter.format(padelRevenue)}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.pickleballLabel}</h4>
+                      <p className="font-heading text-2xl font-black text-white">{formatter.format(pickleballRevenue)}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.retailLabel}</h4>
+                      <p className="font-heading text-2xl font-black text-white">{formatter.format(retailRevenue)}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.opexLabel}</h4>
+                      <p className="font-heading text-2xl font-black text-brand-secondary">-{formatter.format(opex)}</p>
+                    </div>
+                    <div className="col-span-1 sm:col-span-2 pt-3 border-t border-white/10">
                       <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.gross}</h4>
-                      <p className="font-heading text-2xl font-black text-white">{formatter.format(rawRevenue)}</p>
+                      <p className="font-heading text-2xl font-black text-white">{formatter.format(totalRevenue)}</p>
                     </div>
-                    <div>
-                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">
-                        <span className="relative group cursor-help">
-                          {t.roi.ebitda}
-                          <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
-                            {t.roi.tooltipEBITDA}
-                          </span>
-                        </span>
-                      </h4>
-                      <p className="font-heading text-2xl font-black text-brand-primary">{formatter.format(ebitda)}</p>
-                    </div>
-                    <div className="col-span-2 pt-3 border-t border-white/10">
-                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">
-                        <span className="relative group cursor-help">
-                          {t.roi.calcIRRLabel}
-                          <span className="absolute bottom-full left-0 mb-2 w-64 bg-brand-darker border border-white/20 text-white text-[11px] font-normal leading-relaxed p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl">
-                            {t.roi.tooltipIRR}
-                          </span>
-                        </span>
-                      </h4>
-                      <p className="font-heading text-3xl font-black text-brand-primary">{calcIRR.toFixed(1)}%</p>
+                    <div className="col-span-1 sm:col-span-2 pt-3 border-t border-white/10">
+                      <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{t.roi.ebitda}</h4>
+                      <p className="font-heading text-3xl font-black text-brand-primary">{formatter.format(ebitda)}</p>
                     </div>
                   </div>
                 </div>
               </div>
             </Reveal>
           </div>
+
+          <Reveal delay={0.25}>
+            <div className="glass-panel rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-12">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-secondary/10 rounded-full blur-3xl"></div>
+              <Sparkles className="absolute top-6 right-6 text-brand-primary/30" size={30} />
+
+              <div className="relative z-10">
+                <h3 className="font-heading text-2xl font-bold text-white mb-2">{t.roi.interactiveTitle}</h3>
+                <p className="text-zinc-400 mb-6 text-sm">{t.roi.interactiveSubtitle}</p>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <label className="text-sm font-bold text-zinc-300">{t.roi.investmentLabel}</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="500000"
+                        max="1000000"
+                        step="10000"
+                        value={investment}
+                        onChange={(e) => handleInvestmentChange(e.target.value)}
+                        className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+                      />
+                      <input
+                        type="number"
+                        min="500000"
+                        max="1000000"
+                        step="10000"
+                        value={investment}
+                        onChange={(e) => handleInvestmentChange(e.target.value)}
+                        className="w-40 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm font-bold"
+                      />
+                    </div>
+                    <p className="text-xs text-white/60">{t.roi.investmentHelp}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.roiLabel}</p>
+                      <p className="font-heading text-2xl font-black text-brand-primary">{roiAnnual.toFixed(1)}%</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.paybackLabel}</p>
+                      <p className="font-heading text-2xl font-black text-white">{paybackYears.toFixed(1)}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.ebitdaLabel}</p>
+                      <p className="font-heading text-2xl font-black text-white">{formatter.format(ebitdaDynamic)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
 
           {/* Financial Glossary */}
           <Reveal delay={0.3}>
