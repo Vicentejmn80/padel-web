@@ -14,10 +14,11 @@ export const content = {
       langSwitchToEnglish: "Switch to English (EN)",
     },
     hero: {
-      badge: "Shovel-Ready Investment: Land with Approved Project & Permits",
+      badge: "SHOVEL-READY INVESTMENT: LAND WITH APPROVED PROJECT & PERMITS - FOR SALE",
       title1: "Own the First Pádel & Pickleball Club in Cape Coral",
       titleHighlight: "Cape Coral",
-      subtitle: "The project contemplates a total estimated investment of $700,000. Under a conservative scenario, it projects an annual EBITDA of $191,000, representing a 27.3% annual return and a 3.7-year payback.",
+      subtitle: "Acquire the asset for $200,000 (land & permits) and execute the full project at a total investment of $700,000. Under a conservative scenario, it projects an annual EBITDA of $191,000, representing a 27.3% annual return and a 3.7-year payback.",
+      askingPrice: "Asking Price: $200,000 ONLY",
       btnPrimary: "Request Private Investment Deck",
       btnSecondary: "View Financial Model",
       irrLabel: "Annual ROI",
@@ -143,6 +144,7 @@ export const content = {
       roiLabel: "Annual ROI",
       paybackLabel: "Payback (Years)",
       ebitdaLabel: "EBITDA",
+      proofNote: "Financial Projections based on: 3 Courts, 14h daily operation, $45/hr avg. rate at 60% occupancy. Operating expenses estimated at 27% of gross revenue.",
       glossaryTitle: "Methodology & Definitions",
       glossaryIRRLabel: "IRR",
       glossaryIRRText: "(Internal Rate of Return): Measures the geometric profitability of expected cash flows, discounting the initial $700K investment.",
@@ -206,6 +208,9 @@ export const content = {
       email: "Business Email",
       phone: "Phone Number",
       submit: "Request Private Investment Deck",
+      sending: "Sending...",
+      successTitle: "Success! The Private Investment Deck has been sent to your email.",
+      successBody: "If you don't see it in a few minutes, check your spam folder.",
       protect: "Information protected under strict NDA and confidentiality policies."
     },
     pathways: {
@@ -246,10 +251,11 @@ export const content = {
       langSwitchToEnglish: "Cambiar a inglés (EN)",
     },
     hero: {
-      badge: "Inversión Shovel-Ready: Terreno con Proyecto y Permisos Aprobados",
+      badge: "INVERSION SHOVEL-READY: TERRENO CON PROYECTO Y PERMISOS APROBADOS - EN VENTA",
       title1: "Adquiera el Primer Club de Pádel & Pickleball en Cape Coral",
       titleHighlight: "Cape Coral",
-      subtitle: "El proyecto contempla una inversión total estimada de $700,000. Bajo un escenario conservador, proyecta un EBITDA anual de $191,000, representando un retorno anual del 27.3% y un payback de 3.7 años.",
+      subtitle: "Adquiera el activo por $200,000 (terreno y permisos) y ejecute el proyecto completo con una inversión total de $700,000. Bajo un escenario conservador, proyecta un EBITDA anual de $191,000, representando un retorno anual del 27.3% y un payback de 3.7 años.",
+      askingPrice: "Precio de Venta: $200,000 SOLAMENTE",
       btnPrimary: "Solicitar Dossier de Inversión Privado",
       btnSecondary: "Ver Modelo Financiero",
       irrLabel: "ROI Anual",
@@ -375,6 +381,7 @@ export const content = {
       roiLabel: "ROI Anual",
       paybackLabel: "Payback (Años)",
       ebitdaLabel: "EBITDA",
+      proofNote: "Proyecciones financieras basadas en: 3 canchas, 14h de operación diaria, tarifa promedio de $45/hr al 60% de ocupación. Gastos operativos estimados en 27% del ingreso bruto.",
       glossaryTitle: "Metodología y Definiciones",
       glossaryIRRLabel: "TIR",
       glossaryIRRText: "(Tasa Interna de Retorno): Mide la rentabilidad geométrica de los flujos de caja esperados, descontando la inversión inicial de $700K.",
@@ -438,6 +445,9 @@ export const content = {
       email: "Correo Corporativo",
       phone: "Número de Teléfono",
       submit: "Solicitar Dossier de Inversión Privado",
+      sending: "Enviando...",
+      successTitle: "¡Éxito! El Dossier de Inversión Privado fue enviado a tu correo.",
+      successBody: "Si no lo ves en unos minutos, revisa tu carpeta de spam.",
       protect: "Información protegida bajo estrictas políticas de confidencialidad y acuerdos de no divulgación (NDA)."
     },
     pathways: {

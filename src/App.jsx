@@ -43,6 +43,8 @@ function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lang, setLang] = useState(() => localStorage.getItem('padel_lang') || 'en');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const baseInvestment = 700000;
   const [investment, setInvestment] = useState(baseInvestment);
 
@@ -67,18 +69,39 @@ function App() {
   const opex = 112000;
   const totalRevenue = padelRevenue + pickleballRevenue + retailRevenue;
   const ebitda = totalRevenue - opex;
-  const baseEbitda = 191000;
-  const ebitdaMargin = 0.27;
-  const grossRevenueBase = baseEbitda / ebitdaMargin;
-  const ebitdaDynamic = grossRevenueBase * ebitdaMargin * (investment / baseInvestment);
-  const roiAnnual = (ebitdaDynamic / investment) * 100;
-  const paybackYears = investment / ebitdaDynamic;
+  const targetEbitda = 191000;
+  const roiAnnual = (targetEbitda / investment) * 100;
+  const paybackYears = investment / targetEbitda;
 
   const formatter = new Intl.NumberFormat(lang === 'es' ? 'es-US' : 'en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0
   });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData(event.target);
+      const response = await fetch('https://formspree.io/f/mvzvbnbo', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Accept: 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Form submission failed');
+      }
+      setIsSubmitted(true);
+      event.target.reset();
+    } catch (error) {
+      setIsSubmitting(false);
+      return;
+    }
+    setIsSubmitting(false);
+  };
 
   const handleInvestmentChange = (value) => {
     const numericValue = Number(value);
@@ -191,11 +214,14 @@ function App() {
               {t.hero.badge}
             </div>
             
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-transparent leading-[1.05] tracking-tighter mb-8 max-w-4xl hero-title">
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-transparent leading-[1.05] tracking-tighter mb-6 max-w-4xl hero-title">
               {t.hero.title1}<span className="opacity-90">{t.hero.titleHighlight}</span>
             </h1>
             
-            <p className="text-xl font-sans font-light leading-relaxed text-white/80 max-w-2xl mb-12">
+            <p className="text-2xl md:text-3xl font-serif font-semibold text-white mb-4 tracking-wide">
+              {t.hero.askingPrice}
+            </p>
+            <p className="text-lg md:text-xl font-sans font-light leading-relaxed text-white/80 max-w-3xl mb-12">
               {t.hero.subtitle}
             </p>
             
@@ -513,15 +539,9 @@ function App() {
                         onChange={(e) => handleInvestmentChange(e.target.value)}
                         className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-primary"
                       />
-                      <input
-                        type="number"
-                        min="500000"
-                        max="1000000"
-                        step="10000"
-                        value={investment}
-                        onChange={(e) => handleInvestmentChange(e.target.value)}
-                        className="w-40 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm font-bold"
-                      />
+                      <div className="w-44 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm font-bold text-right">
+                        {formatter.format(investment)}
+                      </div>
                     </div>
                     <p className="text-xs text-white/60">{t.roi.investmentHelp}</p>
                   </div>
@@ -529,18 +549,45 @@ function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                       <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.roiLabel}</p>
-                      <p className="font-heading text-2xl font-black text-brand-primary">{roiAnnual.toFixed(1)}%</p>
+                      <motion.p
+                        key={`roi-${roiAnnual.toFixed(1)}-${investment}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="font-heading text-2xl font-black text-brand-primary"
+                      >
+                        {roiAnnual.toFixed(1)}%
+                      </motion.p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                       <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.paybackLabel}</p>
-                      <p className="font-heading text-2xl font-black text-white">{paybackYears.toFixed(1)}</p>
+                      <motion.p
+                        key={`payback-${paybackYears.toFixed(1)}-${investment}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="font-heading text-2xl font-black text-white"
+                      >
+                        {paybackYears.toFixed(1)}
+                      </motion.p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                       <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mb-1">{t.roi.ebitdaLabel}</p>
-                      <p className="font-heading text-2xl font-black text-white">{formatter.format(ebitdaDynamic)}</p>
+                      <motion.p
+                        key={`ebitda-${targetEbitda}-${investment}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="font-heading text-2xl font-black text-white"
+                      >
+                        {formatter.format(targetEbitda)}
+                      </motion.p>
                     </div>
                   </div>
                 </div>
+                <p className="text-[11px] text-white/60 mt-6 border-t border-white/10 pt-4">
+                  {t.roi.proofNote}
+                </p>
               </div>
             </div>
           </Reveal>
@@ -769,19 +816,26 @@ function App() {
                 </div>
                 
                 <div className="md:col-span-2 bg-white/5 backdrop-blur p-6 rounded-[2rem] border border-white/10">
-                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                    <input type="text" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.name} required />
-                    <input type="email" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.email} required />
-                    <input type="tel" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.phone} required />
-                    
-                    <button type="submit" className="w-full bg-brand-primary text-brand-darker font-bold text-lg py-4 rounded-xl mt-4 hover:bg-brand-primary/90 transition-all flex justify-center items-center gap-2 group shadow-[0_0_20px_rgba(141,224,44,0.3)]">
-                      {t.contact.submit}
-                      <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <p className="text-[11px] text-zinc-400 text-center font-medium px-4 leading-tight mt-3">
-                      {t.contact.protect}
-                    </p>
-                  </form>
+                  {isSubmitted ? (
+                    <div className="glass-panel rounded-2xl p-6 text-center">
+                      <p className="text-lg font-bold text-white">{t.contact.successTitle}</p>
+                      <p className="text-sm text-white/70 mt-2">{t.contact.successBody}</p>
+                    </div>
+                  ) : (
+                    <form className="space-y-4" onSubmit={handleSubmit}>
+                      <input name="name" type="text" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.name} required />
+                      <input name="email" type="email" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.email} required />
+                      <input name="phone" type="tel" className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary outline-none font-medium placeholder-white/40 text-white" placeholder={t.contact.phone} required />
+                      
+                      <button type="submit" disabled={isSubmitting} className="w-full bg-brand-primary text-brand-darker font-bold text-lg py-4 rounded-xl mt-4 hover:bg-brand-primary/90 transition-all flex justify-center items-center gap-2 group shadow-[0_0_20px_rgba(141,224,44,0.3)] disabled:opacity-70 disabled:cursor-not-allowed">
+                        {isSubmitting ? t.contact.sending : t.contact.submit}
+                        {!isSubmitting && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+                      </button>
+                      <p className="text-[11px] text-zinc-400 text-center font-medium px-4 leading-tight mt-3">
+                        {t.contact.protect}
+                      </p>
+                    </form>
+                  )}
                 </div>
               </div>
             </div>
